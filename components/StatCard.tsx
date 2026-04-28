@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
-import { Colors, Typography, Layout } from '../theme/tokens';
-import { useI18n } from '../lib/i18n';
+import { Typography, Layout, LightTheme, DarkTheme } from '../theme/tokens';
+import { useTheme } from '../hooks/useTheme';
 
 interface StatCardProps {
   title: string;
@@ -14,6 +14,7 @@ interface StatCardProps {
 }
 
 export default function StatCard({ title, value, subtitle, color, icon, flex = 1 }: StatCardProps) {
+  const { theme } = useTheme();
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -30,17 +31,21 @@ export default function StatCard({ title, value, subtitle, color, icon, flex = 1
 
   return (
     <Pressable onPressIn={handlePressIn} onPressOut={handlePressOut} style={{ flex }}>
-      <Animated.View style={[styles.card, animatedStyle]}>
+      <Animated.View style={[styles.card, animatedStyle, { 
+        backgroundColor: theme.surface, 
+        borderColor: theme.border, 
+        borderLeftColor: color 
+      }]}>
         <View style={styles.header}>
-          <View style={[styles.iconBox, { backgroundColor: `${color}15` }]}>
+          <Text style={[styles.title, { color: theme.textMuted }]}>{title}</Text>
+          <View style={styles.iconBox}>
             {icon}
           </View>
-          <Text style={styles.subtitle}>{subtitle}</Text>
         </View>
-        <Text style={styles.value} numberOfLines={1} adjustsFontSizeToFit>
+        <Text style={[styles.value, { color: theme.textPrimary }]} numberOfLines={1} adjustsFontSizeToFit>
           {value}
         </Text>
-        <Text style={styles.title}>{title}</Text>
+        <Text style={[styles.subtitle, { color: theme.textMuted }]}>{subtitle}</Text>
       </Animated.View>
     </Pressable>
   );
@@ -48,35 +53,39 @@ export default function StatCard({ title, value, subtitle, color, icon, flex = 1
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.surface,
-    borderRadius: Layout.radius.l,
-    padding: Layout.spacing.xl,
-    marginBottom: Layout.spacing.l,
+    borderRadius: Layout.radius.m,
+    padding: 16,
+    marginBottom: Layout.spacing.m,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderLeftWidth: 4,
     ...Layout.shadow,
+    elevation: 2,
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 4 },
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 20,
-  },
-  iconBox: {
-    padding: 8,
-    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 8,
   },
   title: {
-    ...Typography.label,
-    color: '#334155', // slightly darker for better contrast
-    marginTop: 4,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  iconBox: {
+    opacity: 0.9,
   },
   value: {
-    ...Typography.stat,
-    color: Colors.textPrimary,
+    fontSize: 28,
+    fontWeight: '800',
+    marginBottom: 4,
+    letterSpacing: -0.5,
   },
   subtitle: {
-    ...Typography.label,
-    color: Colors.textHint,
+    fontSize: 12,
+    fontWeight: '500',
   },
 });

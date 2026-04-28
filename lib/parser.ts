@@ -1,7 +1,7 @@
-import { Machine, Order, PurchaseOrder, Shipment } from './db';
+import { Machine, Order, PurchaseOrder, Shipment, Vendor, RFQ } from './db';
 
 export interface CommandResult {
-  action: 'UPDATE_MACHINE' | 'UPDATE_ORDER' | 'UPDATE_SHIPMENT' | 'UPDATE_PO' | 'NAVIGATE' | 'TOAST' | 'ERROR';
+  action: 'UPDATE_MACHINE' | 'UPDATE_ORDER' | 'UPDATE_SHIPMENT' | 'UPDATE_PO' | 'NAVIGATE' | 'TOAST' | 'RICH_DISPLAY' | 'ERROR';
   payload?: any;
   message: string;
 }
@@ -11,95 +11,120 @@ interface ParserContext {
   machines: Machine[];
   shipments: Shipment[];
   pos: PurchaseOrder[];
+  vendors: Vendor[];
+  rfqs: RFQ[];
 }
+
+const INTENTS = {
+  NAVIGATE_ORDERS: ['order', 'orders', 'sale', 'sales', 'pipeline', 'production'],
+  NAVIGATE_MACHINES: ['machine', 'machines', 'equipment', 'tool', 'cnc', 'lathe', 'milling'],
+  NAVIGATE_SHIPMENTS: ['shipment', 'shipments', 'dispatch', 'outgoing', 'delivery', 'deliveries'],
+  NAVIGATE_VENDORS: ['vendor', 'vendors', 'supplier', 'suppliers', 'seller'],
+  NAVIGATE_PROCUREMENT: ['procure', 'procurement', 'purchase', 'po', 'buying', 'materials', 'rfq'],
+  NAVIGATE_DASHBOARD: ['dash', 'dashboard', 'control', 'home', 'back'],
+  QUERY_COUNT: ['how many', 'count', 'total', 'kitne', 'number of'],
+  STATUS_UPDATE: ['mark', 'set', 'update', 'status', 'change', 'kharab', 'down', 'running', 'fixed', 'broken', 'done', 'started', 'completed'],
+};
 
 export function parseCommand(input: string, context: ParserContext): CommandResult {
   const text = input.toLowerCase().trim();
 
-  // 1. shipment for [client] dispatched
-  let match = text.match(/shipment for (.+) dispatched/);
-  if (match) {
-    const clientName = match[1].trim();
-    const hit = context.shipments.find(s => s.client.toLowerCase() === clientName);
-    if (hit) {
-      return { action: 'UPDATE_SHIPMENT', payload: { id: hit.id, updates: { status: 'Dispatched' } }, message: `Shipment for ${hit.client} marked DISPATCHED.` };
+  // 1. Entity Extraction
+  const orderIdMatch = text.match(/ord-\d+/);
+  const machineIdMatch = text.match(/m-\d+/);
+  const numericMatch = text.match(/\d+/);
+
+  // 2. Resolve Intent
+  let bestIntent = 'UNKNOWN';
+  let maxScore = 0;
+
+  for (const [intent, keywords] of Object.entries(INTENTS)) {
+    let score = 0;
+    keywords.forEach(kw => {
+      if (text.includes(kw)) score++;
+    });
+    if (score > maxScore) {
+      maxScore = score;
+      bestIntent = intent;
     }
-    return { action: 'ERROR', message: `No pending shipment found for client: ${clientName}` };
   }
 
-  // 2. delivery from [vendor] received
-  match = text.match(/delivery from (.+) received/);
-  if (match) {
-    const vendorName = match[1].trim();
-    const hit = context.pos.find(p => p.vendorName.toLowerCase().includes(vendorName) && p.status === 'Pending');
-    if (hit) {
-      return { action: 'UPDATE_PO', payload: { id: hit.id, updates: { status: 'Delivered' } }, message: `Delivery from ${hit.vendorName} received (PO ${hit.id}).` };
+  // FORCE RICH DISPLAY FOR ALL INQUIRIES
+  if (bestIntent !== 'UNKNOWN' && !text.includes('mark') && !text.includes('set') && !text.includes('running') && !text.includes('down') && !text.includes('dispatched') && !text.includes('completed')) {
+    if (bestIntent === 'NAVIGATE_ORDERS') {
+      return { 
+        action: 'RICH_DISPLAY', 
+        payload: { type: 'ORDERS_DASHBOARD', data: context.orders }, 
+        message: `Fetched ${context.orders.length} active orders.` 
+      };
     }
-    return { action: 'ERROR', message: `No pending PO found for vendor: ${vendorName}` };
-  }
-
-  // 3. order [N] started
-  match = text.match(/order (\d+) started/);
-  if (match) {
-    return { action: 'UPDATE_ORDER', payload: { id: match[1], updates: { status: 'IN PROGRESS', progress: 5 } }, message: `Order ${match[1]} STARTED.` };
-  }
-
-  // 4. machine [N] service done
-  match = text.match(/machine (\d+) service done/);
-  if (match) {
-    const target = context.machines.find(m => m.id === match![1]);
-    if (target) {
-      const msDay = 1000 * 3600 * 24;
-      const t = new Date();
-      const last = t.toISOString().split('T')[0];
-      const next = new Date(t.getTime() + 90 * msDay).toISOString().split('T')[0];
-      return { action: 'UPDATE_MACHINE', payload: { id: match[1], updates: { lastService: last, nextService: next } }, message: `Machine ${match[1]} service logged. Next: ${next}.` };
+    if (bestIntent === 'NAVIGATE_MACHINES') {
+      return { 
+        action: 'RICH_DISPLAY', 
+        payload: { type: 'MACHINES_DASHBOARD', data: context.machines }, 
+        message: `Current machine status across the factory floor.` 
+      };
     }
-    return { action: 'ERROR', message: `Machine ${match[1]} not found.` };
+    if (bestIntent === 'NAVIGATE_VENDORS') {
+      return { 
+        action: 'RICH_DISPLAY', 
+        payload: { type: 'VENDORS_DASHBOARD', data: context.vendors }, 
+        message: "Vendor reliability and performance report." 
+      };
+    }
+    if (bestIntent === 'NAVIGATE_PROCUREMENT') {
+      return { 
+        action: 'RICH_DISPLAY', 
+        payload: { type: 'PROCUREMENT_DASHBOARD', data: { pos: context.pos, rfqs: context.rfqs } }, 
+        message: "Procurement and sourcing overview." 
+      };
+    }
+    if (bestIntent === 'NAVIGATE_SHIPMENTS') {
+      return { 
+        action: 'RICH_DISPLAY', 
+        payload: { type: 'SHIPMENTS_DASHBOARD', data: context.shipments }, 
+        message: "Active shipment tracking info." 
+      };
+    }
   }
 
-  // 5. add delay to order [N]
-  match = text.match(/add delay to order (\d+)/);
-  if (match) {
-    return { action: 'UPDATE_ORDER', payload: { id: match[1], updates: { delayed: true } }, message: `Delay logged for Order ${match[1]}.` };
+  // Global Summary
+  if (text === 'dashboard' || text === 'overview' || text === 'summary' || text === 'hi' || text === 'hello') {
+    return { 
+      action: 'RICH_DISPLAY', 
+      payload: { type: 'GLOBAL_DASHBOARD', data: { orders: context.orders, machines: context.machines, shipments: context.shipments } }, 
+      message: "AetherBuilt OS System Overview" 
+    };
   }
 
-  // 6. how many orders active
-  if (text.includes('how many orders active') || text.includes('active orders count')) {
-    const active = context.orders.filter(o => o.status !== 'COMPLETED').length;
-    return { action: 'TOAST', message: `There are ${active} active orders currently.` };
+  // Action Logic
+  if (text.includes('down') || text.includes('kharab') || text.includes('broken')) {
+    const num = numericMatch ? numericMatch[0] : null;
+    const targetId = machineIdMatch ? machineIdMatch[0].toUpperCase() : num ? `M-${num.padStart(2, '0')}` : null;
+    if (targetId) {
+       return { action: 'UPDATE_MACHINE', payload: { id: targetId, updates: { status: 'Down' } }, message: `Machine ${targetId} marked as DOWN 🚨` };
+    }
   }
 
-  // 7. show delayed orders
-  if (text.includes('show delayed orders') || text.includes('delayed orders')) {
-    return { action: 'NAVIGATE', payload: { route: '/orders', query: 'DELAYED' }, message: `Navigating to delayed orders...` };
+  if (text.includes('running') || text.includes('fixed') || text.includes('up')) {
+    const num = numericMatch ? numericMatch[0] : null;
+    const targetId = machineIdMatch ? machineIdMatch[0].toUpperCase() : num ? `M-${num.padStart(2, '0')}` : null;
+    if (targetId) {
+       return { action: 'UPDATE_MACHINE', payload: { id: targetId, updates: { status: 'Running' } }, message: `Machine ${targetId} back online ✅` };
+    }
   }
 
-  // 8. rfq for [material]
-  match = text.match(/rfq for (.+)/);
-  if (match) {
-    return { action: 'NAVIGATE', payload: { route: '/procurement', query: match[1] }, message: `Opening new RFQ for ${match[1]}...` };
+  if (text.includes('done') || text.includes('completed')) {
+    const targetId = orderIdMatch ? orderIdMatch[0].toUpperCase() : numericMatch ? `ORD-${numericMatch[0]}` : null;
+    if (targetId) {
+      return { action: 'UPDATE_ORDER', payload: { id: targetId, updates: { status: 'COMPLETED', progress: 100 } }, message: `Order ${targetId} completed.` };
+    }
   }
 
-  // Legacy commands
-  match = text.match(/machine (\d+) (stopped|down|broke)/);
-  if (match) return { action: 'UPDATE_MACHINE', payload: { id: match[1], updates: { status: 'Down' } }, message: `Machine ${match[1]} marked as DOWN.` };
+  // Help
+  if (text.includes('help')) {
+    return { action: 'TOAST', message: "Try: 'show orders', 'list machines', 'machine 2 is down', 'show procurement', or simply 'summary'." };
+  }
 
-  match = text.match(/machine (\d+) (running|fixed)/);
-  if (match) return { action: 'UPDATE_MACHINE', payload: { id: match[1], updates: { status: 'Running' } }, message: `Machine ${match[1]} marked as RUNNING.` };
-
-  match = text.match(/order (\d+) (completed|done|finished)/);
-  if (match) return { action: 'UPDATE_ORDER', payload: { id: match[1], updates: { status: 'COMPLETED', progress: 100 } }, message: `Order ${match[1]} marked as COMPLETED.` };
-
-  match = text.match(/order (\d+) (\d{1,3})%/);
-  if (match) return { action: 'UPDATE_ORDER', payload: { id: match[1], updates: { progress: parseInt(match[2], 10), status: parseInt(match[2], 10) === 100 ? 'COMPLETED' : 'IN PROGRESS' } }, message: `Order ${match[1]} progress set to ${match[2]}%.` };
-
-  // Legacy navigations
-  if (text.includes('active orders')) return { action: 'NAVIGATE', payload: { route: '/orders' }, message: `Navigating to Orders...` };
-  if (text.includes('machines down')) return { action: 'NAVIGATE', payload: { route: '/machines' }, message: `Navigating to Machines...` };
-  if (text.includes('show vendors') || text.includes('all vendors')) return { action: 'NAVIGATE', payload: { route: '/vendors' }, message: `Navigating to Vendors...` };
-  if (text.includes('pending deliveries')) return { action: 'NAVIGATE', payload: { route: '/procurement' }, message: `Navigating to Procurement...` };
-  if (text.includes('dashboard')) return { action: 'NAVIGATE', payload: { route: '/dashboard' }, message: `Navigating to Dashboard...` };
-
-  return { action: 'ERROR', message: "Command not understood — try rephrasing." };
+  return { action: 'ERROR', message: "I'm not sure how to handle that. Try asking for 'help'." };
 }

@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { BottomSheetModal, BottomSheetBackdrop, BottomSheetView } from '@gorhom/bottom-sheet';
-import { Colors } from '../theme/tokens';
+import { useTheme } from '../hooks/useTheme';
 import * as Haptics from 'expo-haptics';
 
 interface ConfirmSheetProps {
@@ -16,6 +16,7 @@ interface ConfirmSheetProps {
 
 export default function ConfirmSheet({ visible, title, message, confirmStyle = 'primary', confirmText = 'Confirm', onConfirm, onClose }: ConfirmSheetProps) {
   const bottomSheetRef = useRef<BottomSheetModal>(null);
+  const { theme } = useTheme();
 
   useEffect(() => {
     if (visible) {
@@ -28,9 +29,9 @@ export default function ConfirmSheet({ visible, title, message, confirmStyle = '
 
   const getConfirmColor = () => {
     switch (confirmStyle) {
-      case 'danger': return Colors.accentRed;
-      case 'success': return Colors.accentGreen;
-      default: return Colors.accentBlue;
+      case 'danger': return theme.accentRed;
+      case 'success': return theme.accentGreen;
+      default: return theme.accentBlue;
     }
   };
 
@@ -43,18 +44,18 @@ export default function ConfirmSheet({ visible, title, message, confirmStyle = '
       backdropComponent={(props) => (
         <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.6} />
       )}
-      backgroundStyle={{ backgroundColor: Colors.surface }}
+      backgroundStyle={{ backgroundColor: theme.surface }}
     >
       <BottomSheetView style={styles.contentContainer}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.message}>{message}</Text>
+        <Text style={[styles.title, { color: theme.textPrimary }]}>{title}</Text>
+        <Text style={[styles.message, { color: theme.textMuted }]}>{message}</Text>
         
         <View style={styles.buttonRow}>
-          <Pressable style={styles.cancelBtn} onPress={() => {
+          <Pressable style={[styles.cancelBtn, { backgroundColor: theme.background }]} onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             bottomSheetRef.current?.dismiss();
           }}>
-            <Text style={styles.cancelText}>Cancel</Text>
+            <Text style={[styles.cancelText, { color: theme.textPrimary }]}>Cancel</Text>
           </Pressable>
           <Pressable style={[styles.confirmBtn, { backgroundColor: getConfirmColor() }]} onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
@@ -71,11 +72,11 @@ export default function ConfirmSheet({ visible, title, message, confirmStyle = '
 
 const styles = StyleSheet.create({
   contentContainer: { flex: 1, padding: 24, alignItems: 'center' },
-  title: { fontSize: 20, fontWeight: '700', color: Colors.textPrimary, marginBottom: 12, textAlign: 'center' },
-  message: { fontSize: 15, color: Colors.textMuted, textAlign: 'center', marginBottom: 32, lineHeight: 22 },
+  title: { fontSize: 20, fontWeight: '700', marginBottom: 12, textAlign: 'center' },
+  message: { fontSize: 15, textAlign: 'center', marginBottom: 32, lineHeight: 22 },
   buttonRow: { flexDirection: 'row', width: '100%', justifyContent: 'space-between', marginTop: 'auto' },
-  cancelBtn: { flex: 1, paddingVertical: 16, borderRadius: 12, backgroundColor: Colors.background, marginRight: 12, alignItems: 'center' },
-  cancelText: { color: Colors.textPrimary, fontSize: 16, fontWeight: '600' },
+  cancelBtn: { flex: 1, paddingVertical: 16, borderRadius: 12, marginRight: 12, alignItems: 'center' },
+  cancelText: { fontSize: 16, fontWeight: '600' },
   confirmBtn: { flex: 1, paddingVertical: 16, borderRadius: 12, alignItems: 'center' },
   confirmText: { color: '#ffffff', fontSize: 16, fontWeight: '600' },
 });

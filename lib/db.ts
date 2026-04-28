@@ -33,6 +33,13 @@ export interface Vendor {
   priceTrend: 'stable' | 'rising';
 }
 
+export interface Employee {
+  id: string;
+  name: string;
+  email: string;
+  password?: string;
+}
+
 export interface Shipment {
   id: number;
   orderId: number;
@@ -57,6 +64,16 @@ export interface PurchaseOrder {
   orderDate: string;
 }
 
+export interface Quotation {
+  id: string;
+  rfqId: string;
+  vendorName: string;
+  price: number;
+  validUntil: string;
+  terms: string;
+  status: 'Draft' | 'Sent' | 'Accepted';
+}
+
 export interface RFQ {
   id: string;
   material: string;
@@ -74,38 +91,40 @@ export interface CommandHistoryItem {
 }
 
 export const initialOrders: Order[] = [
-  { id: '1', client: 'Tata Motors', product: 'Gear Shaft', quantity: 500, progress: 65, status: 'IN PROGRESS', deadline: '2026-05-01', expectedDays: 20, delayed: false },
-  { id: '2', client: 'Bajaj Auto', product: 'Frame Bracket', quantity: 200, progress: 0, status: 'NOT STARTED', deadline: '2026-05-15', expectedDays: 14, delayed: false },
-  { id: '3', client: 'Hero MotoCorp', product: 'Engine Mount', quantity: 350, progress: 100, status: 'COMPLETED', deadline: '2026-04-10', expectedDays: 10, delayed: false },
-  { id: '4', client: 'Mahindra', product: 'Suspension Rod', quantity: 150, progress: 30, status: 'IN PROGRESS', deadline: '2026-04-20', expectedDays: 25, delayed: true },
+  { id: 'ORD-772', client: 'Tata Motors', product: 'Gearbox Housing', quantity: 500, progress: 65, status: 'IN PROGRESS', deadline: '2026-05-10', expectedDays: 14, delayed: false },
+  { id: 'ORD-801', client: 'Reliance Ind', product: 'Polymer Valves', quantity: 1200, progress: 10, status: 'IN PROGRESS', deadline: '2026-05-01', expectedDays: 20, delayed: true },
+  { id: 'ORD-905', client: 'Mahindra Tech', product: 'Axle Brackets', quantity: 250, progress: 0, status: 'NOT STARTED', deadline: '2026-05-15', expectedDays: 8, delayed: false },
 ];
 
 export const initialMachines: Machine[] = [
-  { id: '1', name: 'CNC Machine 1', type: 'Cutting', status: 'Running', lastService: '2026-01-10', nextService: '2026-07-10', downtimeHours: 12 },
-  { id: '2', name: 'Lathe Machine 2', type: 'Shaping', status: 'Down', lastService: '2025-11-20', nextService: '2026-05-20', downtimeHours: 45 },
-  { id: '3', name: 'Press Machine 3', type: 'Forming', status: 'Running', lastService: '2026-02-15', nextService: '2026-08-15', downtimeHours: 5 },
-  { id: '4', name: 'Welding Unit 4', type: 'Assembly', status: 'Maintenance', lastService: '2025-12-05', nextService: '2026-04-15', downtimeHours: 20 },
+  { id: 'M-01', name: 'CNC-X1', type: 'Milling', status: 'Running', lastService: '2026-03-01', nextService: '2026-06-01', downtimeHours: 12 },
+  { id: 'M-02', name: 'CNC-X2', type: 'Milling', status: 'Down', lastService: '2026-02-15', nextService: '2026-05-15', downtimeHours: 48 },
+  { id: 'M-03', name: 'L-SERIES', type: 'Lathe', status: 'Running', lastService: '2026-04-10', nextService: '2026-07-10', downtimeHours: 4 },
+  { id: 'M-04', name: 'P-PRESS', type: 'Plasma', status: 'Maintenance', lastService: '2026-04-20', nextService: '2026-05-20', downtimeHours: 24 },
 ];
 
 export const initialVendors: Vendor[] = [
-  { id: '1', name: 'Sharma Steel Works', material: 'Steel Sheets', city: 'Pune', reliability: 92, avgDeliveryDays: 4, priceTrend: 'stable' },
-  { id: '2', name: 'Gupta Polymers', material: 'Plastic Pellets', city: 'Mumbai', reliability: 78, avgDeliveryDays: 7, priceTrend: 'rising' },
-  { id: '3', name: 'Patel Fasteners', material: 'Nuts & Bolts', city: 'Ahmedabad', reliability: 96, avgDeliveryDays: 3, priceTrend: 'stable' },
+  { id: 'V-001', name: 'Sharma Hardware', reliability: 94, material: 'Steel Rods', city: 'Pune', avgDeliveryDays: 3, priceTrend: 'stable' },
+  { id: 'V-002', name: 'Gupta Alloys', reliability: 82, material: 'Aluminum Ingots', city: 'Bhopal', avgDeliveryDays: 7, priceTrend: 'rising' },
+];
+
+export const initialEmployees: Employee[] = [
+  { id: 'EMP-X9K2M', name: 'Rahul Sharma', email: 'rahul.s@aetherbuilt.com', password: 'password123' },
 ];
 
 export const initialShipments: Shipment[] = [
-  { id: 1, orderId: 1, client: 'Tata Motors', product: 'Gear Shaft', qty: 500, dispatchDate: '2026-01-20', expectedDelivery: '2026-01-22', status: 'Dispatched', carrier: 'Delhivery', trackingNote: 'In transit' },
-  { id: 2, orderId: 2, client: 'Bajaj Auto', product: 'Frame Bracket', qty: 200, dispatchDate: '-', expectedDelivery: '2026-02-05', status: 'Pending', carrier: 'Bluedart', trackingNote: 'Awaiting dispatch' },
-  { id: 3, orderId: 3, client: 'Hero MotoCorp', product: 'Engine Mount', qty: 350, dispatchDate: '2026-01-14', expectedDelivery: '2026-01-16', status: 'Delivered', carrier: 'Gati', trackingNote: 'Delivered successfully' },
-  { id: 4, orderId: 4, client: 'Mahindra', product: 'Suspension Rod', qty: 150, dispatchDate: '2026-01-10', expectedDelivery: '2026-01-15', status: 'Delayed', carrier: 'FedEx', trackingNote: 'Stuck at toll', delayReason: 'Carrier issue' },
+  { id: 1021, orderId: 772, client: 'Tata Motors', product: 'Gearbox Housing', qty: 200, dispatchDate: '2026-04-25', expectedDelivery: '2026-04-28', status: 'Dispatched', carrier: 'BlueDart', trackingNote: 'In Transit - Mumbai Hub' },
+  { id: 1022, orderId: 801, client: 'Reliance Ind', product: 'Polymer Valves', qty: 600, dispatchDate: '2026-04-29', expectedDelivery: '2026-05-02', status: 'Pending', carrier: 'Delhivery', trackingNote: 'Awaiting Pickup' },
 ];
 
 export const initialPOs: PurchaseOrder[] = [
-  { id: 'PO-1001', vendorName: 'Sharma Steel Works', material: 'Steel Sheets', qty: 1000, unitPrice: 250, status: 'Delivered', orderDate: '2026-01-05' },
-  { id: 'PO-1002', vendorName: 'Gupta Polymers', material: 'Plastic Pellets', qty: 500, unitPrice: 120, status: 'Pending', orderDate: '2026-01-18' },
-  { id: 'PO-1003', vendorName: 'Patel Fasteners', material: 'Nuts & Bolts', qty: 10000, unitPrice: 5, status: 'Pending', orderDate: '2026-01-19' },
+  { id: 'PO-991', vendorName: 'Sharma Hardware', material: 'Steel Rods', qty: 1000, unitPrice: 450, status: 'Pending', orderDate: '2026-04-20' },
 ];
 
 export const initialRFQs: RFQ[] = [
-  { id: 'RFQ-001', material: 'Aluminum Ingots', quantity: 2000, status: 'Open', dueDate: '2026-02-01' },
+  { id: 'RFQ-001', material: 'Copper Wire', quantity: 500, status: 'Open', dueDate: '2026-05-05' },
+];
+
+export const initialQuotations: Quotation[] = [
+  { id: 'QTN-101', rfqId: 'RFQ-001', vendorName: 'Ayush Metals', price: 150000, validUntil: '2026-05-15', terms: 'Payment on delivery', status: 'Draft' },
 ];

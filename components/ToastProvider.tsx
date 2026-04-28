@@ -3,12 +3,14 @@ import { View, Text, StyleSheet } from 'react-native';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import { CheckCircle, AlertTriangle, AlertCircle } from 'lucide-react-native';
 import { ToastContext, ToastType } from '../hooks/useToast';
-import { Colors } from '../theme/tokens';
+import { Typography, Layout, LightTheme, DarkTheme } from '../theme/tokens';
+import { useTheme } from '../hooks/useTheme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toast, setToast] = useState<{ message: string; type: ToastType; id: number } | null>(null);
   const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
 
   const showToast = (message: string, type: ToastType = 'success') => {
     setToast({ message, type, id: Date.now() });
@@ -23,10 +25,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
   const getToastColor = (type: ToastType) => {
     switch (type) {
-      case 'success': return Colors.accentGreen;
-      case 'warning': return Colors.accentAmber;
-      case 'error': return Colors.accentRed;
-      default: return '#111827';
+      case 'success': return theme.accentGreen;
+      case 'warning': return theme.accentAmber;
+      case 'error': return theme.accentRed;
+      default: return theme.textPrimary;
     }
   };
 

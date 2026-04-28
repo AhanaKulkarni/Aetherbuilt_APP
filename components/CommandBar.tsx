@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, ScrollView, Pressable, Platform } from 'react-native';
 import { Send } from 'lucide-react-native';
-import { Colors } from '../theme/tokens';
-import { parseCommand } from '../lib/parser';
-import { useFactory } from '../hooks/useFactory';
+import { useCommand } from '../hooks/useCommand';
+import { useTheme } from '../hooks/useTheme';
 import { useRouter } from 'expo-router';
-import { useToast } from '../hooks/useToast';
 import * as Haptics from 'expo-haptics';
 
 const CHIPS = [
@@ -15,82 +13,44 @@ const CHIPS = [
 
 export default function CommandBar() {
   const [text, setText] = useState('');
-  const { orders, machines, shipments, pos, updateOrder, updateMachine, updateShipment, updatePO, addCommandHistory } = useFactory();
+  const { executeCommand } = useCommand();
+  const { theme, isDarkMode } = useTheme();
   const router = useRouter();
-  const { showToast } = useToast();
 
   const handleSend = (cmd: string = text) => {
     if (!cmd.trim()) return;
-    
-    const context = { orders, machines, shipments, pos };
-    const result = parseCommand(cmd, context);
-    
-    // Log history
-    addCommandHistory({
-      timestamp: new Date().toISOString(),
-      rawInput: cmd,
-      success: result.action !== 'ERROR',
-      message: result.message
-    });
-
-    if (result.action === 'ERROR') {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      showToast(result.message, 'error');
-    } else {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      if (result.action !== 'TOAST' && result.action !== 'NAVIGATE') {
-        showToast(result.message, 'success');
-      } else if (result.action === 'TOAST') {
-        showToast(result.message, 'success');
-      }
-    }
-    
-    // Process intent
-    if (result.action === 'UPDATE_MACHINE') {
-      updateMachine(result.payload.id, result.payload.updates);
-    } else if (result.action === 'UPDATE_ORDER') {
-      updateOrder(result.payload.id, result.payload.updates);
-    } else if (result.action === 'UPDATE_SHIPMENT') {
-      updateShipment(result.payload.id, result.payload.updates);
-    } else if (result.action === 'UPDATE_PO') {
-      updatePO(result.payload.id, result.payload.updates);
-    } else if (result.action === 'NAVIGATE') {
-      // In Expo Router, params can be passed via navigating to the exact route or with search parameters
-      router.push(result.payload.route as any);
-      if (result.action === 'NAVIGATE') showToast(result.message, 'success'); // Toast on success navigate
-    }
-
+    executeCommand(cmd);
     setText('');
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.surface, borderColor: theme.border }]}>
       <View style={styles.inputContainer}>
-        <View style={styles.commandPill}>
-          <Text style={styles.commandPillText}>⚡ COMMAND</Text>
+        <View style={[styles.commandPill, { backgroundColor: theme.textPrimary }]}>
+          <Text style={[styles.commandPillText, { color: isDarkMode ? '#000' : '#fff' }]}>⚡ COMMAND</Text>
         </View>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { color: theme.textPrimary }]}
           placeholder='Try: "order 3 completed", "delayed orders", "machine 2 down"'
-          placeholderTextColor={Colors.textHint}
+          placeholderTextColor={theme.textHint}
           value={text}
           onChangeText={setText}
           onSubmitEditing={() => handleSend()}
           returnKeyType="send"
         />
-        <Pressable style={styles.sendButton} onPress={() => handleSend()}>
-          <Send size={16} color={Colors.textMuted} />
+        <Pressable style={[styles.sendButton, { borderColor: theme.border }]} onPress={() => handleSend()}>
+          <Send size={16} color={theme.textMuted} />
         </Pressable>
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll} contentContainerStyle={styles.chipContent}>
         {CHIPS.map((chip, idx) => (
-          <Pressable key={idx} style={styles.chip} onPress={() => handleSend(chip)}>
-            <Text style={styles.chipText}>{chip}</Text>
+          <Pressable key={idx} style={[styles.chip, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#f3f4f6' }]} onPress={() => handleSend(chip)}>
+            <Text style={[styles.chipText, { color: theme.textMuted }]}>{chip}</Text>
           </Pressable>
         ))}
-        <Pressable style={[styles.chip, styles.chipDark]} onPress={() => router.push('/command')}>
-          <Text style={styles.chipDarkText}>Full Command Center {'>'}</Text>
+        <Pressable style={[styles.chip, styles.chipDark, { backgroundColor: theme.textPrimary }]} onPress={() => router.push('/command')}>
+          <Text style={[styles.chipDarkText, { color: isDarkMode ? '#000' : '#fff' }]}>Full Command Center {'>'}</Text>
         </Pressable>
       </ScrollView>
     </View>
@@ -99,10 +59,8 @@ export default function CommandBar() {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#ffffff',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.border,
     padding: 8,
     marginBottom: 24,
     ...Platform.select({
@@ -116,21 +74,20 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   commandPill: {
-    backgroundColor: '#111827',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
     marginRight: 12,
   },
-  commandPillText: { color: '#ffffff', fontSize: 12, fontWeight: 'bold', letterSpacing: 0.5 },
-  input: { flex: 1, fontSize: 14, color: Colors.textPrimary, paddingVertical: 8 },
-  sendButton: { padding: 8, borderRadius: 20, borderWidth: 1, borderColor: Colors.border, marginLeft: 8 },
+  commandPillText: { fontSize: 12, fontWeight: 'bold', letterSpacing: 0.5 },
+  input: { flex: 1, fontSize: 14, paddingVertical: 8 },
+  sendButton: { padding: 8, borderRadius: 20, borderWidth: 1, marginLeft: 8 },
   chipScroll: { flexDirection: 'row' },
   chipContent: { alignItems: 'center' },
   chip: {
-    backgroundColor: '#f3f4f6', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, marginRight: 8,
+    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, marginRight: 8,
   },
-  chipText: { color: Colors.textMuted, fontSize: 12 },
-  chipDark: { backgroundColor: '#1f2937' },
-  chipDarkText: { color: '#ffffff', fontSize: 12, fontWeight: '500' },
+  chipText: { fontSize: 12 },
+  chipDark: {},
+  chipDarkText: { fontSize: 12, fontWeight: '500' },
 });

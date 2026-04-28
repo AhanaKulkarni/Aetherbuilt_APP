@@ -1,11 +1,13 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Colors, Typography, Layout } from '../theme/tokens';
+import { Typography, Layout, LightTheme, DarkTheme } from '../theme/tokens';
+import { useTheme } from '../hooks/useTheme';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing, withRepeat, withSequence } from 'react-native-reanimated';
 
 export default function ProcessHaltedCard({ haltPercent = 35 }: { haltPercent?: number }) {
   const width = useSharedValue(0);
   const opacity = useSharedValue(1);
+  const { theme, isDarkMode } = useTheme();
 
   useEffect(() => {
     width.value = withTiming(haltPercent, {
@@ -32,23 +34,23 @@ export default function ProcessHaltedCard({ haltPercent = 35 }: { haltPercent?: 
   }));
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
       <View style={styles.topRow}>
-        <View style={styles.pill}>
-          <Animated.View style={[styles.dot, animatedDotStyle]} />
-          <Text style={styles.pillText}>DELAYED</Text>
+        <View style={[styles.pill, { backgroundColor: theme.accentRed + '10', borderColor: theme.accentRed + '20' }]}>
+          <Animated.View style={[styles.dot, animatedDotStyle, { backgroundColor: theme.accentRed }]} />
+          <Text style={[styles.pillText, { color: theme.accentRed }]}>DELAYED</Text>
         </View>
       </View>
       
-      <Text style={styles.subtext}>Supply Chain Halt</Text>
+      <Text style={[styles.subtext, { color: theme.accentRed }]}>Supply Chain Halt</Text>
       
       <View style={styles.bottomRow}>
-        <Text style={styles.title}>PROCESS HALTED</Text>
-        <Text style={styles.percentText}>{haltPercent}%</Text>
+        <Text style={[styles.title, { color: theme.textMuted }]}>PROCESS HALTED</Text>
+        <Text style={[styles.percentText, { color: theme.textMuted }]}>{haltPercent}%</Text>
       </View>
 
-      <View style={styles.barBackground}>
-        <Animated.View style={[styles.barFill, animatedBarStyle]} />
+      <View style={[styles.barBackground, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#f1f5f9' }]}>
+        <Animated.View style={[styles.barFill, animatedBarStyle, { backgroundColor: '#ec4899' }]} />
       </View>
     </View>
   );
@@ -56,10 +58,10 @@ export default function ProcessHaltedCard({ haltPercent = 35 }: { haltPercent?: 
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.surface,
     borderRadius: Layout.radius.xl,
     padding: Layout.spacing.xxl,
     marginBottom: Layout.spacing.l,
+    borderWidth: 1,
     ...Layout.shadow,
   },
   topRow: {
@@ -70,30 +72,25 @@ const styles = StyleSheet.create({
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fef2f2',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#fee2e2',
   },
   dot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: Colors.accentRed,
     marginRight: 6,
   },
   pillText: {
     fontSize: 11,
     fontWeight: '700',
-    color: Colors.accentRed,
     letterSpacing: 1,
   },
   subtext: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#b91c1c',
     textAlign: 'right',
     marginBottom: 32,
   },
@@ -104,23 +101,22 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   title: {
-    ...Typography.label,
-    color: Colors.textMuted,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
   percentText: {
     fontSize: 13,
     fontWeight: '700',
-    color: Colors.textMuted,
   },
   barBackground: {
     height: 6,
-    backgroundColor: '#f1f5f9',
     borderRadius: 3,
     overflow: 'hidden',
   },
   barFill: {
     height: '100%',
-    backgroundColor: '#ec4899', // pinkish red as per mockup
     borderRadius: 3,
   },
 });

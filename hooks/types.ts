@@ -1,0 +1,45 @@
+import { Machine, Order, Vendor, Shipment, PurchaseOrder, RFQ, Quotation, CommandHistoryItem, Employee } from '../lib/db';
+import { Insight } from '../lib/InsightEngine';
+
+export interface FactoryContextType {
+  orders: Order[];
+  machines: Machine[];
+  vendors: Vendor[];
+  employees: Employee[];
+  shipments: Shipment[];
+  pos: PurchaseOrder[];
+  rfqs: RFQ[];
+  quotations: Quotation[];
+  commandHistory: CommandHistoryItem[];
+  isDarkMode: boolean;
+  demoMode: boolean;
+  bypassAuth: boolean;
+  toggleDarkMode: () => void;
+  setBypassAuth: (v: boolean) => void;
+  setOrders: (orders: Order[]) => void;
+  setMachines: (machines: Machine[]) => void;
+  setVendors: (vendors: Vendor[]) => void;
+  setEmployees: (employees: Employee[]) => void;
+  setShipments: (shipments: Shipment[]) => void;
+  setPOs: (pos: PurchaseOrder[]) => void;
+  setRFQs: (rfqs: RFQ[]) => void;
+  setQuotations: (q: Quotation[]) => void;
+  addOrder: (o: Omit<Order, 'id'>) => void;
+  addMachine: (m: Omit<Machine, 'id'>) => void;
+  addVendor: (v: Omit<Vendor, 'id'>) => void;
+  addEmployee: (e: Omit<Employee, 'id'>) => void;
+  addShipment: (s: Omit<Shipment, 'id'>) => void;
+  addRFQ: (r: Omit<RFQ, 'id'>) => void;
+  addPO: (p: Omit<PurchaseOrder, 'id'>) => void;
+  updateOrder: (id: string, updates: Partial<Order>) => void;
+  updateMachine: (id: string, updates: Partial<Machine>) => void;
+  updateEmployee: (id: string, updates: Partial<Employee>) => void;
+  updateShipment: (id: number, updates: Partial<Shipment>) => void;
+  updatePO: (id: string, updates: Partial<PurchaseOrder>) => void;
+  updateQuotation: (id: string, updates: Partial<Quotation>) => void;
+  addCommandHistory: (item: Omit<CommandHistoryItem, 'id'>) => void;
+  setDemoMode: (val: boolean) => void;
+  loadData: () => Promise<void>;
+  resetData: () => Promise<void>;
+  insights: Insight[];
+}
